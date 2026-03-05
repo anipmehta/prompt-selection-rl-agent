@@ -15,6 +15,8 @@ class RLAgent:
     using Q-learning with ε-greedy exploration.
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     # Parameter range constants
     PARAM_MIN = 0.0
     PARAM_MAX = 1.0
@@ -42,7 +44,7 @@ class RLAgent:
         exploration_rate: float = DEFAULT_EXPLORATION_RATE,
         decay_rate: float = DEFAULT_DECAY_RATE,
         min_exploration: float = DEFAULT_MIN_EXPLORATION,
-    ):
+    ):  # pylint: disable=too-many-arguments,too-many-positional-arguments
         """
         Initialize the RL agent with configuration parameters.
 
@@ -137,4 +139,3 @@ class RLAgent:
         current_q = self.q_table.get(state, action)
         new_q = current_q + self.learning_rate * (reward - current_q)
         self.q_table.set(state, action, new_q)
-
