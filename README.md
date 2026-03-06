@@ -30,9 +30,43 @@ The project follows a spec-driven development approach with comprehensive docume
 3. **Separation of Concerns**: Independent Agent, Environment, and Experience Buffer components
 4. **Extensibility**: Clear extension points for future enhancements without premature complexity
 
+## Quick Start
+
+```python
+from src import RLAgent, Environment
+
+# Initialize agent with prompt options
+agent = RLAgent(prompts=["Be concise", "Be detailed", "Be creative"])
+env = Environment()  # Manual mode — you provide reward scores
+
+# Training loop
+state = "summarize an article"
+for episode in range(5):
+    action = agent.select_action(state)   # Agent picks a prompt
+    reward = env.execute(action, state)    # You score it [-1.0, 1.0]
+    agent.update(state, action, reward)    # Agent learns from your feedback
+
+# Inspect what the agent learned
+print(agent.q_table.to_dict())
+```
+
+Or run the included demo:
+
+```bash
+python3 demo.py
+```
+
 ## Project Status
 
-Currently in specification phase. Implementation will follow the documented requirements and design.
+Phase 1 (Core Learning Loop) is complete:
+- Q-table data structure with state-action value storage
+- RL agent with configurable hyperparameters and parameter validation
+- ε-greedy action selection (explore vs exploit)
+- Q-learning update rule
+- Manual HITL environment for reward collection
+- 66 unit tests passing
+
+Remaining phases: experience buffer, batch training, mode switching, exploration decay, metrics, policy persistence, state encoding, and extensibility interfaces.
 
 ## License
 
