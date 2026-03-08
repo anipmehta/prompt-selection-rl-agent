@@ -74,7 +74,39 @@ def main() -> None:
         # so this stays at 1.0; that's expected at this stage)
         print(f"Exploration rate: {agent.exploration_rate}\n")
 
-    print("=== Demo complete ===")
+    print("=== Phase 1 Demo complete ===\n")
+
+    # --- 4. Batch training demo (Phase 2) ---
+    print("=== Batch Training Demo ===\n")
+
+    batch_agent = RLAgent(prompts=prompts, learning_rate=0.1)
+    print("Collecting 5 episodes into experience buffer (no learning yet)...\n")
+
+    for episode in range(1, num_episodes + 1):
+        print(f"--- Episode {episode} (buffered) ---")
+        action = batch_agent.select_action(task)
+        print(f"Selected prompt: {action!r}")
+        reward = env.execute(action, task)
+        batch_agent.store_experience(task, action, reward)
+        print(f"Buffer size: {batch_agent._buffer.size()}")  # pylint: disable=protected-access
+
+        print("\nQ-table (should still be empty):")
+        print_q_table(batch_agent)
+        print()
+
+    # Now train on all buffered experiences at once
+    print("--- Training on all buffered experiences ---")
+    batch_agent.train_batch()
+    print("\nQ-table after batch training:")
+    print_q_table(batch_agent)
+
+    # Clear buffer, Q-values persist
+    batch_agent.clear_buffer()
+    print(f"\nBuffer cleared. Buffer size: {batch_agent._buffer.size()}")  # pylint: disable=protected-access
+    print("Q-table still intact:")
+    print_q_table(batch_agent)
+
+    print("\n=== Batch Training Demo complete ===")
 
 
 if __name__ == "__main__":

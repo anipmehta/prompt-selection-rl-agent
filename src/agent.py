@@ -6,6 +6,7 @@ import random
 from typing import List
 
 from .errors import ConfigurationError, ValidationError
+from .experience_buffer import ExperienceBuffer
 from .q_table import QTable
 
 
@@ -71,6 +72,7 @@ class RLAgent:
         self.min_exploration = min_exploration
         self.q_table = QTable()
         self.mode = self.MODE_TRAINING
+        self._buffer = ExperienceBuffer()
 
     def _validate_param(self, name: str, value: float) -> None:
         """Validate that a parameter is within [0.0, 1.0]."""
@@ -139,3 +141,28 @@ class RLAgent:
         current_q = self.q_table.get(state, action)
         new_q = current_q + self.learning_rate * (reward - current_q)
         self.q_table.set(state, action, new_q)
+
+    def store_experience(self, state: str, action: str, reward: float) -> None:
+        """
+        Add episode to experience buffer for batch training.
+
+        Args:
+            state: State where action was taken
+            action: Action (prompt) that was selected
+            reward: Reward received
+        """
+        self._buffer.add(state, action, reward)
+
+    def train_batch(self) -> None:
+        """
+        Train on all experiences in the buffer (offline batch training).
+
+        Iterates through all stored episodes and updates Q-values.
+        Does not clear the buffer automatically.
+        """
+        for state, action, reward in self._buffer.get_all():
+            self.update(state, action, reward)
+
+    def clear_buffer(self) -> None:
+        """Clear all experiences from the buffer."""
+        self._buffer.clear()
