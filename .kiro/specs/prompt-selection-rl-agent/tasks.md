@@ -127,8 +127,8 @@ This phase implements the absolute minimum to demonstrate Q-learning in action.
 
 This phase adds offline batch training capabilities.
 
-- [ ] 8. Implement experience buffer
-  - [ ] 8.1 Create ExperienceBuffer class
+- [x] 8. Implement experience buffer
+  - [x] 8.1 Create ExperienceBuffer class
     - Initialize with empty list to store episodes
     - Implement add method: append (state, action, reward) tuple
     - Implement get_all method: return list of all episodes
@@ -145,30 +145,30 @@ This phase adds offline batch training capabilities.
     - **Property 26: Experience Buffer Clearing**
     - **Validates: Requirements 12.5**
 
-- [ ] 9. Integrate experience buffer with agent
-  - [ ] 9.1 Add experience buffer to agent initialization
+- [x] 9. Integrate experience buffer with agent
+  - [x] 9.1 Add experience buffer to agent initialization
     - Create ExperienceBuffer instance in __init__
     - _Requirements: 12.1_
   
-  - [ ] 9.2 Implement store_experience method
+  - [x] 9.2 Implement store_experience method
     - Accept parameters: state, action, reward
     - Call buffer.add(state, action, reward)
     - _Requirements: 12.2_
   
-  - [ ] 9.3 Implement train_batch method
+  - [x] 9.3 Implement train_batch method
     - Get all episodes from buffer using get_all()
     - For each episode, call update(state, action, reward)
     - _Requirements: 12.3, 12.4_
   
-  - [ ] 9.4 Implement clear_buffer method
+  - [x] 9.4 Implement clear_buffer method
     - Call buffer.clear()
     - _Requirements: 12.5_
   
-  - [ ]* 9.5 Write integration test for batch training workflow
+  - [x]* 9.5 Write integration test for batch training workflow
     - Test: collect experiences → train_batch → verify Q-values updated
     - _Requirements: 12.1-12.5_
 
-- [ ] 10. Checkpoint - Batch training functional
+- [x] 10. Checkpoint - Batch training functional
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 3: Mode Switching and Exploration Decay
