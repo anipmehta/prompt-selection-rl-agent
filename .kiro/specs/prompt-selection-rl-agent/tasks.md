@@ -171,6 +171,32 @@ This phase adds offline batch training capabilities.
 - [x] 10. Checkpoint - Batch training functional
   - Ensure all tests pass, ask the user if questions arise.
 
+## Phase 2.5: Strategy Pattern Refactor
+
+This phase extracts the learning algorithm into a pluggable strategy, enabling comparison of different RL techniques.
+
+- [x] 10.5 Extract learning strategy pattern
+  - [x] 10.5.1 Create BaseLearningStrategy ABC
+    - Define interface: select_action(), update(), get_q_values(), get_table()
+    - _Requirements: 8.4_
+  
+  - [x] 10.5.2 Create QLearningStrategy implementation
+    - Extract Q-learning logic from RLAgent into QLearningStrategy
+    - Owns QTable, learning_rate, discount_factor
+    - _Requirements: 3.2_
+  
+  - [x] 10.5.3 Refactor RLAgent to accept strategy parameter
+    - Add optional strategy param to __init__ (defaults to QLearningStrategy)
+    - Agent delegates select_action and update to strategy
+    - Backward compatible — no API changes for existing code
+    - _Requirements: 8.4_
+  
+  - [x] 10.5.4 Write tests for strategy swapping
+    - Test QLearningStrategy in isolation
+    - Test agent uses custom strategy when provided
+    - Test default strategy is QLearningStrategy
+    - 7 new tests, 90 total passing
+
 ## Phase 3: Mode Switching and Exploration Decay
 
 This phase adds training/inference mode separation and exploration decay.
