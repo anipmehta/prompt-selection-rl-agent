@@ -1,19 +1,21 @@
 """
-RL Agent implementing Q-learning for prompt selection.
+RL Agent for prompt selection with pluggable learning strategies.
 """
 
-import random
-from typing import List
+from typing import List, Optional
 
 from .errors import ConfigurationError, ValidationError
 from .experience_buffer import ExperienceBuffer
-from .q_table import QTable
+from .strategy import BaseLearningStrategy, QLearningStrategy
 
 
 class RLAgent:
     """
-    Reinforcement learning agent that learns to select optimal prompts
-    using Q-learning with ε-greedy exploration.
+    Reinforcement learning agent that learns to select optimal prompts.
+
+    The agent handles lifecycle concerns (mode, buffer, validation)
+    and delegates learning decisions to a pluggable LearningStrategy.
+    Default strategy is Q-learning with ε-greedy exploration.
     """
 
     # pylint: disable=too-many-instance-attributes
@@ -45,17 +47,19 @@ class RLAgent:
         exploration_rate: float = DEFAULT_EXPLORATION_RATE,
         decay_rate: float = DEFAULT_DECAY_RATE,
         min_exploration: float = DEFAULT_MIN_EXPLORATION,
+        strategy: Optional[BaseLearningStrategy] = None,
     ):  # pylint: disable=too-many-arguments,too-many-positional-arguments
         """
         Initialize the RL agent with configuration parameters.
 
         Args:
             prompts: List of available prompt templates
-            learning_rate: Q-learning alpha (0.0-1.0)
-            discount_factor: Q-learning gamma (0.0-1.0)
+            learning_rate: Alpha for default Q-learning strategy (0.0-1.0)
+            discount_factor: Gamma for default Q-learning strategy (0.0-1.0)
             exploration_rate: Initial epsilon for ε-greedy (0.0-1.0)
             decay_rate: Multiplicative decay per episode (0.0-1.0)
             min_exploration: Minimum epsilon threshold
+            strategy: Learning strategy (defaults to QLearningStrategy)
         """
         self._validate_prompts(prompts)
         self._validate_param("learning_rate", learning_rate)
@@ -70,9 +74,22 @@ class RLAgent:
         self.exploration_rate = exploration_rate
         self.decay_rate = decay_rate
         self.min_exploration = min_exploration
-        self.q_table = QTable()
         self.mode = self.MODE_TRAINING
         self._buffer = ExperienceBuffer()
+
+        # Use provided strategy or default to Q-learning
+        if strategy is not None:
+            self._strategy = strategy
+        else:
+            self._strategy = QLearningStrategy(
+                learning_rate=learning_rate,
+                discount_factor=discount_factor,
+            )
+
+    @property
+    def q_table(self):
+        """Access the strategy's Q-table (for backward compatibility)."""
+        return self._strategy.q_table
 
     def _validate_param(self, name: str, value: float) -> None:
         """Validate that a parameter is within [0.0, 1.0]."""
@@ -90,10 +107,10 @@ class RLAgent:
 
     def select_action(self, state: str) -> str:
         """
-        Select a prompt for the given state using ε-greedy strategy.
+        Select a prompt for the given state.
 
-        Training mode: explore (random) with probability ε, exploit (best Q) otherwise.
-        Inference mode: always exploit (best Q-value).
+        Training mode: delegates to strategy (ε-greedy by default).
+        Inference mode: always exploit (exploration_rate=0.0).
 
         Args:
             state: Current task context
@@ -101,28 +118,15 @@ class RLAgent:
         Returns:
             Selected prompt text
         """
-        if self.mode == self.MODE_INFERENCE or random.random() > self.exploration_rate:
-            return self._exploit(state)
-        return self._explore()
-
-    def _exploit(self, state: str) -> str:
-        """Select the prompt with the highest Q-value for the given state."""
-        state_actions = self.q_table.get_state_actions(state)
-        if not state_actions:
-            return random.choice(self.prompts)
-
-        best_action = max(state_actions, key=state_actions.get)
-        return best_action
-
-    def _explore(self) -> str:
-        """Select a random prompt."""
-        return random.choice(self.prompts)
+        if self.mode == self.MODE_INFERENCE:
+            return self._strategy.select_action(state, self.prompts, 0.0)
+        return self._strategy.select_action(
+            state, self.prompts, self.exploration_rate
+        )
 
     def update(self, state: str, action: str, reward: float) -> None:
         """
-        Update Q-value based on received reward (training mode only).
-
-        Applies simplified Q-learning (γ=0): Q(s,a) ← Q(s,a) + α[r - Q(s,a)]
+        Update knowledge based on received reward (training mode only).
 
         Args:
             state: State where action was taken
@@ -138,9 +142,7 @@ class RLAgent:
         if self.mode == self.MODE_INFERENCE:
             return
 
-        current_q = self.q_table.get(state, action)
-        new_q = current_q + self.learning_rate * (reward - current_q)
-        self.q_table.set(state, action, new_q)
+        self._strategy.update(state, action, reward)
 
     def store_experience(self, state: str, action: str, reward: float) -> None:
         """
@@ -157,7 +159,7 @@ class RLAgent:
         """
         Train on all experiences in the buffer (offline batch training).
 
-        Iterates through all stored episodes and updates Q-values.
+        Iterates through all stored episodes and updates via strategy.
         Does not clear the buffer automatically.
         """
         for state, action, reward in self._buffer.get_all():

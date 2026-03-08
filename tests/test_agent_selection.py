@@ -57,8 +57,8 @@ class TestExploration:
         selected = {agent.select_action(TEST_STATE) for _ in range(100)}
         assert len(selected) > 1
 
-    @patch("src.agent.random.random", return_value=0.5)
-    @patch("src.agent.random.choice", return_value="Be concise")
+    @patch("src.strategy.random.random", return_value=0.5)
+    @patch("src.strategy.random.choice", return_value="Be concise")
     def test_explores_when_random_below_epsilon(self, mock_choice, _mock_random):
         """Agent explores when random value <= exploration_rate."""
         agent = RLAgent(prompts=SAMPLE_PROMPTS, exploration_rate=0.8)
