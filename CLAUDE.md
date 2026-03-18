@@ -61,7 +61,7 @@ Never skip this step — the user expects a copy-pasteable PR description after 
 3. Run `make check` again to verify the fix
 4. Only commit when the build is green
 
-**Build command:** `make check` (runs lint then tests)
+**Build command:** `make check` (runs ruff + pylint + tests)
 
 Follow conventional commit format:
 ```

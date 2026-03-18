@@ -12,10 +12,13 @@ test-cov:
 lint:
 	ruff check src/ tests/
 
+pylint:
+	pylint $$(git ls-files '*.py')
+
 lint-fix:
 	ruff check src/ tests/ --fix
 
-check: lint test
+check: lint pylint test
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
