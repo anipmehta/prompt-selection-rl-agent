@@ -42,6 +42,17 @@ Use descriptive branch names following this pattern:
 - The user explicitly asks for a new commit
 - You're starting a different task
 
+### PR Description
+
+**CRITICAL:** After pushing a feature branch, ALWAYS provide a PR description in markdown format. The description should include:
+- Summary of what changed and why
+- What was added/modified (files, methods, classes)
+- Test coverage (number of tests, what's covered)
+- Requirements/tasks addressed
+- How to test the changes
+
+Never skip this step — the user expects a copy-pasteable PR description after every push.
+
 ### Build Verification
 
 **CRITICAL:** After EVERY code change, run `make check` (lint + tests). If the build fails:
@@ -237,5 +248,6 @@ prompt-selection-rl-agent/
 3. ✅ Always run tests before committing
 4. ✅ Always update task status
 5. ✅ Always ask before major changes
+6. ✅ Always provide a markdown PR description after pushing
 
 **Remember:** The user has branch protection enabled on `main`. Direct pushes will be rejected.
