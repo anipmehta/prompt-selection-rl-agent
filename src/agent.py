@@ -2,10 +2,11 @@
 RL Agent for prompt selection with pluggable learning strategies.
 """
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from .errors import ConfigurationError, ModeError, ValidationError
 from .experience_buffer import ExperienceBuffer
+from .metrics import MetricsTracker
 from .strategy import BaseLearningStrategy, QLearningStrategy
 
 
@@ -86,10 +87,28 @@ class RLAgent:
                 discount_factor=discount_factor,
             )
 
+        # Metrics
+        self._metrics = MetricsTracker()
+
     @property
     def q_table(self):
         """Access the strategy's Q-table (for backward compatibility)."""
         return self._strategy.q_table
+
+    @property
+    def episode_count(self) -> int:
+        """Access the metrics tracker's episode count."""
+        return self._metrics.episode_count
+
+    @property
+    def cumulative_reward(self) -> float:
+        """Access the metrics tracker's cumulative reward."""
+        return self._metrics.cumulative_reward
+
+    @property
+    def prompt_selection_counts(self) -> Dict[str, int]:
+        """Access the metrics tracker's prompt selection counts."""
+        return self._metrics.prompt_selection_counts
 
     def _validate_param(self, name: str, value: float) -> None:
         """Validate that a parameter is within [0.0, 1.0]."""
@@ -157,10 +176,13 @@ class RLAgent:
             Selected prompt text
         """
         if self.mode == self.MODE_INFERENCE:
-            return self._strategy.select_action(state, self.prompts, 0.0)
-        return self._strategy.select_action(
-            state, self.prompts, self.exploration_rate
-        )
+            action = self._strategy.select_action(state, self.prompts, 0.0)
+        else:
+            action = self._strategy.select_action(
+                state, self.prompts, self.exploration_rate
+            )
+        self._metrics.record_selection(action)
+        return action
 
     def update(self, state: str, action: str, reward: float) -> None:
         """
@@ -184,7 +206,7 @@ class RLAgent:
 
     def store_experience(self, state: str, action: str, reward: float) -> None:
         """
-        Add episode to experience buffer and decay exploration.
+        Add episode to experience buffer, update metrics, and decay exploration.
 
         Args:
             state: State where action was taken
@@ -192,6 +214,7 @@ class RLAgent:
             reward: Reward received
         """
         self._buffer.add(state, action, reward)
+        self._metrics.record_episode(reward)
         self.decay_exploration()
 
     def train_batch(self) -> None:
@@ -207,3 +230,13 @@ class RLAgent:
     def clear_buffer(self) -> None:
         """Clear all experiences from the buffer."""
         self._buffer.clear()
+
+    def get_metrics(self) -> dict:
+        """
+        Return current agent performance metrics.
+
+        Returns:
+            Dictionary with episode_count, cumulative_reward,
+            average_reward, exploration_rate, and prompt_selection_counts.
+        """
+        return self._metrics.get_metrics(self.exploration_rate)
