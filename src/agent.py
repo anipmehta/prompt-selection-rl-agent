@@ -4,7 +4,7 @@ RL Agent for prompt selection with pluggable learning strategies.
 
 from typing import List, Optional
 
-from .errors import ConfigurationError, ValidationError
+from .errors import ConfigurationError, ModeError, ValidationError
 from .experience_buffer import ExperienceBuffer
 from .strategy import BaseLearningStrategy, QLearningStrategy
 
@@ -105,6 +105,44 @@ class RLAgent:
         if not prompts:
             raise ConfigurationError("Prompts list must not be empty")
 
+    # Valid modes
+    VALID_MODES = {MODE_TRAINING, MODE_INFERENCE}
+
+    def set_mode(self, mode: str) -> None:
+        """
+        Switch agent between training and inference modes.
+
+        When switching to inference, exploration_rate is set to 0.0
+        so the agent always exploits learned knowledge.
+
+        Args:
+            mode: Target mode ("training" or "inference")
+
+        Raises:
+            ModeError: If mode is not a valid mode string
+        """
+        if mode not in self.VALID_MODES:
+            raise ModeError(
+                f"Invalid mode: '{mode}'. Must be one of {self.VALID_MODES}"
+            )
+        self.mode = mode
+        if mode == self.MODE_INFERENCE:
+            self.exploration_rate = self.PARAM_MIN
+
+    def decay_exploration(self) -> None:
+        """
+        Apply multiplicative decay to exploration rate.
+
+        exploration_rate *= decay_rate, floored at min_exploration.
+        Only decays in training mode.
+        """
+        if self.mode != self.MODE_TRAINING:
+            return
+        self.exploration_rate = max(
+            self.exploration_rate * self.decay_rate,
+            self.min_exploration,
+        )
+
     def select_action(self, state: str) -> str:
         """
         Select a prompt for the given state.
@@ -146,7 +184,7 @@ class RLAgent:
 
     def store_experience(self, state: str, action: str, reward: float) -> None:
         """
-        Add episode to experience buffer for batch training.
+        Add episode to experience buffer and decay exploration.
 
         Args:
             state: State where action was taken
@@ -154,6 +192,7 @@ class RLAgent:
             reward: Reward received
         """
         self._buffer.add(state, action, reward)
+        self.decay_exploration()
 
     def train_batch(self) -> None:
         """

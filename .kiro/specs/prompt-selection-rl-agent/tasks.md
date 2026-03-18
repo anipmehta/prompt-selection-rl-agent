@@ -201,23 +201,23 @@ This phase extracts the learning algorithm into a pluggable strategy, enabling c
 
 This phase adds training/inference mode separation and exploration decay.
 
-- [ ] 11. Implement mode switching
-  - [ ] 11.1 Add mode attribute to agent
+- [x] 11. Implement mode switching
+  - [x] 11.1 Add mode attribute to agent
     - Initialize mode to "training" in __init__
     - _Requirements: 11.2_
   
-  - [ ] 11.2 Implement set_mode method
+  - [x] 11.2 Implement set_mode method
     - Accept mode parameter ("training" or "inference")
     - Validate mode is valid, raise ModeError if invalid
     - Set mode attribute
     - If switching to inference, set exploration_rate to 0.0
     - _Requirements: 11.1, 11.3, 11.4_
   
-  - [ ] 11.3 Update select_action to respect mode
+  - [x] 11.3 Update select_action to respect mode
     - In inference mode, always exploit (skip ε-greedy check)
     - _Requirements: 2.4, 6.5_
   
-  - [ ] 11.4 Update update method to respect mode
+  - [x] 11.4 Update update method to respect mode
     - Check mode at start; if inference, return immediately without updating
     - _Requirements: 3.5, 11.4_
   
@@ -229,15 +229,15 @@ This phase adds training/inference mode separation and exploration decay.
     - **Property 5: Inference Mode Exploitation**
     - **Validates: Requirements 2.4**
 
-- [ ] 12. Implement exploration decay
-  - [ ] 12.1 Add decay logic to agent
+- [x] 12. Implement exploration decay
+  - [x] 12.1 Add decay logic to agent
     - Create decay_exploration method
     - Apply multiplicative decay: exploration_rate *= decay_rate
     - Enforce minimum threshold: max(exploration_rate, min_exploration)
     - Only decay in training mode
     - _Requirements: 6.1, 6.3, 6.4, 6.5_
   
-  - [ ] 12.2 Call decay after each episode
+  - [x] 12.2 Call decay after each episode
     - Update store_experience to call decay_exploration after storing
     - _Requirements: 6.1_
   
@@ -249,7 +249,7 @@ This phase adds training/inference mode separation and exploration decay.
     - **Property 14: Zero Exploration in Inference Mode**
     - **Validates: Requirements 6.5**
 
-- [ ] 13. Checkpoint - Mode switching and decay functional
+- [x] 13. Checkpoint - Mode switching and decay functional
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 4: Metrics and Monitoring
