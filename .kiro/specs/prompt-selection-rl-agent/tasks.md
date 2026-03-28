@@ -291,14 +291,14 @@ This phase adds performance tracking capabilities.
 
 This phase adds save/load functionality for Q-tables and agent state.
 
-- [ ] 16. Implement policy serialization
-  - [ ] 16.1 Implement save_policy method
+- [x] 16. Implement policy serialization
+  - [x] 16.1 Implement save_policy method
     - Create dictionary with q_table, config (hyperparameters), metrics, mode, prompts
     - Serialize to JSON file at specified filepath
     - Handle file system errors, raise PersistenceError with details
     - _Requirements: 5.1, 5.3, 9.4, 11.6_
   
-  - [ ] 16.2 Implement load_policy method
+  - [x] 16.2 Implement load_policy method
     - Read JSON file from specified filepath
     - Deserialize and restore q_table, config, metrics, mode, prompts
     - Handle file not found and invalid JSON, raise PersistenceError
@@ -315,13 +315,13 @@ This phase adds save/load functionality for Q-tables and agent state.
     - Test permission errors during save
     - _Requirements: 9.4_
 
-- [ ] 17. Implement experience buffer persistence
-  - [ ] 17.1 Add save method to ExperienceBuffer
+- [x] 17. Implement experience buffer persistence
+  - [x] 17.1 Add save method to ExperienceBuffer
     - Serialize episodes list to JSON file
     - Handle file system errors
     - _Requirements: 12.6_
   
-  - [ ] 17.2 Add load method to ExperienceBuffer
+  - [x] 17.2 Add load method to ExperienceBuffer
     - Deserialize episodes list from JSON file
     - Handle file not found and invalid JSON
     - _Requirements: 12.6_
@@ -330,7 +330,7 @@ This phase adds save/load functionality for Q-tables and agent state.
     - **Property 27: Experience Buffer Serialization Round-Trip**
     - **Validates: Requirements 12.7**
 
-- [ ] 18. Checkpoint - Persistence functional
+- [x] 18. Checkpoint - Persistence functional
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 6: State Representation and Extensibility

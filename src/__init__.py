@@ -5,6 +5,8 @@ from .environment import Environment
 from .errors import ConfigurationError, ModeError, PersistenceError, ValidationError
 from .experience_buffer import ExperienceBuffer
 from .metrics import MetricsTracker
+from .persistence import load_json, save_json
+from .policy import load_policy, save_policy
 from .q_table import QTable
 from .strategy import BaseLearningStrategy, QLearningStrategy
 
@@ -16,6 +18,10 @@ __all__ = [
     "BaseLearningStrategy",
     "QLearningStrategy",
     "MetricsTracker",
+    "load_json",
+    "save_json",
+    "load_policy",
+    "save_policy",
     "ConfigurationError",
     "ValidationError",
     "ModeError",

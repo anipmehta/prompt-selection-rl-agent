@@ -2,6 +2,9 @@
 
 from typing import List, Tuple
 
+from .errors import PersistenceError
+from .persistence import load_json, save_json
+
 
 class ExperienceBuffer:
     """
@@ -42,3 +45,37 @@ class ExperienceBuffer:
     def size(self) -> int:
         """Return the number of episodes in the buffer."""
         return len(self._episodes)
+
+    def save(self, filepath: str) -> None:
+        """
+        Save buffer contents to a JSON file.
+
+        Args:
+            filepath: Path to the output JSON file
+
+        Raises:
+            PersistenceError: If the file cannot be written
+        """
+        data = [list(episode) for episode in self._episodes]
+        save_json(data, filepath)
+
+    def load(self, filepath: str) -> None:
+        """
+        Load buffer contents from a JSON file.
+
+        Replaces current buffer contents with loaded data.
+
+        Args:
+            filepath: Path to the input JSON file
+
+        Raises:
+            PersistenceError: If the file cannot be read or contains invalid data
+        """
+        data = load_json(filepath)
+
+        try:
+            self._episodes = [(str(e[0]), str(e[1]), float(e[2])) for e in data]
+        except (IndexError, TypeError, ValueError, KeyError) as exc:
+            raise PersistenceError(
+                f"Invalid buffer file structure in {filepath}: {exc}"
+            ) from exc

@@ -4,9 +4,12 @@ RL Agent for prompt selection with pluggable learning strategies.
 
 from typing import Dict, List, Optional
 
-from .errors import ConfigurationError, ModeError, ValidationError
+from .errors import ConfigurationError, ModeError, PersistenceError, ValidationError
 from .experience_buffer import ExperienceBuffer
 from .metrics import MetricsTracker
+from .policy import KEY_CONFIG, KEY_METRICS, KEY_MODE, KEY_PROMPTS, KEY_Q_TABLE
+from .policy import load_policy as _load_policy
+from .policy import save_policy as _save_policy
 from .strategy import BaseLearningStrategy, QLearningStrategy
 
 
@@ -240,3 +243,76 @@ class RLAgent:
             average_reward, exploration_rate, and prompt_selection_counts.
         """
         return self._metrics.get_metrics(self.exploration_rate)
+
+    def save_policy(self, filepath: str) -> None:
+        """
+        Save agent state to a JSON file.
+
+        Persists Q-table, hyperparameters, metrics, mode, and prompts
+        so the agent can be restored later for inference or continued training.
+
+        Args:
+            filepath: Path to the output JSON file
+
+        Raises:
+            PersistenceError: If the file cannot be written
+        """
+        state = {
+            KEY_Q_TABLE: self._strategy.get_table(),
+            KEY_CONFIG: {
+                "learning_rate": self.learning_rate,
+                "discount_factor": self.discount_factor,
+                "exploration_rate": self.exploration_rate,
+                "decay_rate": self.decay_rate,
+                "min_exploration": self.min_exploration,
+            },
+            KEY_METRICS: {
+                "episode_count": self._metrics.episode_count,
+                "cumulative_reward": self._metrics.cumulative_reward,
+                "prompt_selection_counts": dict(self._metrics.prompt_selection_counts),
+            },
+            KEY_MODE: self.mode,
+            KEY_PROMPTS: list(self.prompts),
+        }
+        _save_policy(state, filepath)
+
+    def load_policy(self, filepath: str) -> None:
+        """
+        Load agent state from a JSON file.
+
+        Restores Q-table, hyperparameters, metrics, mode, and prompts
+        from a previously saved policy file.
+
+        Args:
+            filepath: Path to the input JSON file
+
+        Raises:
+            PersistenceError: If the file cannot be read or contains invalid data
+        """
+        data = _load_policy(filepath)
+
+        try:
+            # Restore Q-table
+            self._strategy.q_table.from_dict(data[KEY_Q_TABLE])
+
+            # Restore config
+            config = data[KEY_CONFIG]
+            self.learning_rate = config["learning_rate"]
+            self.discount_factor = config["discount_factor"]
+            self.exploration_rate = config["exploration_rate"]
+            self.decay_rate = config["decay_rate"]
+            self.min_exploration = config["min_exploration"]
+
+            # Restore metrics
+            metrics = data[KEY_METRICS]
+            self._metrics.episode_count = metrics["episode_count"]
+            self._metrics.cumulative_reward = metrics["cumulative_reward"]
+            self._metrics.prompt_selection_counts = dict(metrics["prompt_selection_counts"])
+
+            # Restore mode and prompts
+            self.mode = data[KEY_MODE]
+            self.prompts = list(data[KEY_PROMPTS])
+        except (KeyError, TypeError) as exc:
+            raise PersistenceError(
+                f"Invalid policy file structure in {filepath}: {exc}"
+            ) from exc
