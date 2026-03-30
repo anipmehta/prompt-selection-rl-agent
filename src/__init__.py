@@ -8,6 +8,7 @@ from .metrics import MetricsTracker
 from .persistence import load_json, save_json
 from .policy import load_policy, save_policy
 from .q_table import QTable
+from .state_encoder import lowercase_encoder
 from .strategy import BaseLearningStrategy, QLearningStrategy
 
 __all__ = [
@@ -22,6 +23,7 @@ __all__ = [
     "save_json",
     "load_policy",
     "save_policy",
+    "lowercase_encoder",
     "ConfigurationError",
     "ValidationError",
     "ModeError",
