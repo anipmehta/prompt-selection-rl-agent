@@ -98,25 +98,64 @@ In practice, a hybrid approach works well: collect a batch of experiences, train
 ## Project Status
 
 ### Phase 1 — Core Learning Loop ✅
-- Q-table data structure with state-action value storage
-- RL agent with configurable hyperparameters and parameter validation
-- ε-greedy action selection (explore vs exploit)
-- Q-learning update rule
-- Manual HITL environment for reward collection
+- Q-table, ε-greedy action selection, Q-learning updates, manual environment
 
 ### Phase 2 — Experience Buffer and Batch Training ✅
-- Experience buffer for storing (state, action, reward) episodes
-- `store_experience()` to collect interactions without learning
-- `train_batch()` to replay all buffered experiences at once
-- `clear_buffer()` to reset the buffer while preserving Q-values
-- 83 unit tests passing
+- Offline batch training with experience replay
+
+### Phase 2.5 — Strategy Pattern ✅
+- Pluggable learning algorithms (Q-learning default, swap in others)
+
+### Phase 3 — Mode Switching and Exploration Decay ✅
+- Training/inference modes, multiplicative exploration decay
+
+### Phase 4 — Metrics and Monitoring ✅
+- MetricsTracker: episode counts, rewards, prompt selection distribution
+
+### Phase 5 — Policy Persistence ✅
+- Save/load agent state and experience buffer to JSON
+
+### Phase 6 — State Representation and Extensibility ✅
+- State encoders (lowercase normalization)
+- ActionExecutor and RewardFunction interfaces
 
 ### Remaining
-- Phase 3: Mode switching (training/inference) and exploration decay
-- Phase 4: Metrics and monitoring
-- Phase 5: Policy persistence (save/load Q-tables)
-- Phase 6: State representation and extensibility
 - Phase 7: Integration examples and documentation
+
+## Integration — What You Need to Implement
+
+The agent is fully functional but ships with abstract interfaces for external system integration. To connect it to your annotation platform, implement these two classes:
+
+```python
+from src.interfaces import ActionExecutor, RewardFunction
+
+class YourLLMExecutor(ActionExecutor):
+    """Sends the selected prompt to your LLM and returns the response."""
+    def execute(self, prompt: str, task: str) -> str:
+        # Call your LLM API here
+        ...
+
+class YourJudgeReward(RewardFunction):
+    """Scores the LLM response quality. Return value in [-1.0, 1.0]."""
+    def compute(self, task: str, prompt: str, result: str) -> float:
+        # Call your LLM-as-a-Judge evaluator here
+        ...
+```
+
+Then wire them into the training loop:
+
+```python
+executor = YourLLMExecutor()
+judge = YourJudgeReward()
+agent = RLAgent(prompts=["prompt A", "prompt B", "prompt C"])
+
+for task in tasks:
+    prompt = agent.select_action(task)
+    result = executor.execute(prompt, task)
+    reward = judge.compute(task, prompt, result)
+    agent.update(task, prompt, reward)
+    agent.store_experience(task, prompt, reward)
+```
 
 ## License
 

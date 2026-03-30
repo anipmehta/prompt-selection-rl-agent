@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 
 from .errors import ConfigurationError, ModeError, PersistenceError, ValidationError
 from .experience_buffer import ExperienceBuffer
+from .interfaces import ActionExecutor, RewardFunction
 from .metrics import MetricsTracker
 from .policy import KEY_CONFIG, KEY_METRICS, KEY_MODE, KEY_PROMPTS, KEY_Q_TABLE
 from .policy import load_policy as _load_policy
@@ -226,6 +227,30 @@ class RLAgent:
         self._buffer.add(state, action, reward)
         self._metrics.record_episode(reward)
         self.decay_exploration()
+
+    def run_episode(
+        self, task: str, executor: ActionExecutor, reward_fn: RewardFunction
+    ) -> str:
+        """
+        Run a full episode: select prompt, execute, score, learn.
+
+        Ties together action selection, LLM execution, reward scoring,
+        Q-value update, and experience storage in one call.
+
+        Args:
+            task: The task context (state)
+            executor: Sends the prompt to an LLM
+            reward_fn: Scores the LLM response
+
+        Returns:
+            The LLM response text
+        """
+        prompt = self.select_action(task)
+        result = executor.execute(prompt, task)
+        reward = reward_fn.compute(task, prompt, result)
+        self.update(task, prompt, reward)
+        self.store_experience(task, prompt, reward)
+        return result
 
     def train_batch(self) -> None:
         """
