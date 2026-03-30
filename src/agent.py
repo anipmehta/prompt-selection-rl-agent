@@ -52,6 +52,7 @@ class RLAgent:
         decay_rate: float = DEFAULT_DECAY_RATE,
         min_exploration: float = DEFAULT_MIN_EXPLORATION,
         strategy: Optional[BaseLearningStrategy] = None,
+        state_encoder=None,
     ):  # pylint: disable=too-many-arguments,too-many-positional-arguments
         """
         Initialize the RL agent with configuration parameters.
@@ -64,6 +65,7 @@ class RLAgent:
             decay_rate: Multiplicative decay per episode (0.0-1.0)
             min_exploration: Minimum epsilon threshold
             strategy: Learning strategy (defaults to QLearningStrategy)
+            state_encoder: Function to normalize states (defaults to identity)
         """
         self._validate_prompts(prompts)
         self._validate_param("learning_rate", learning_rate)
@@ -92,6 +94,9 @@ class RLAgent:
 
         # Metrics
         self._metrics = MetricsTracker()
+
+        # State encoder (None means no transformation)
+        self._state_encoder = state_encoder
 
     @property
     def q_table(self):
@@ -178,11 +183,12 @@ class RLAgent:
         Returns:
             Selected prompt text
         """
+        encoded = self._state_encoder(state) if self._state_encoder else state
         if self.mode == self.MODE_INFERENCE:
-            action = self._strategy.select_action(state, self.prompts, 0.0)
+            action = self._strategy.select_action(encoded, self.prompts, 0.0)
         else:
             action = self._strategy.select_action(
-                state, self.prompts, self.exploration_rate
+                encoded, self.prompts, self.exploration_rate
             )
         self._metrics.record_selection(action)
         return action
@@ -205,7 +211,8 @@ class RLAgent:
         if self.mode == self.MODE_INFERENCE:
             return
 
-        self._strategy.update(state, action, reward)
+        encoded = self._state_encoder(state) if self._state_encoder else state
+        self._strategy.update(encoded, action, reward)
 
     def store_experience(self, state: str, action: str, reward: float) -> None:
         """
