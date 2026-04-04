@@ -119,8 +119,63 @@ In practice, a hybrid approach works well: collect a batch of experiences, train
 - State encoders (lowercase normalization)
 - ActionExecutor and RewardFunction interfaces
 
-### Remaining
-- Phase 7: Integration examples and documentation
+### Phase 7 — Documentation ✅
+- API reference, integration guide, configuration docs
+
+## API Reference
+
+### RLAgent
+
+The main class. Handles prompt selection, learning, and lifecycle.
+
+```python
+agent = RLAgent(
+    prompts=["A", "B", "C"],       # required: available prompt templates
+    learning_rate=0.1,              # Q-learning alpha (0.0-1.0)
+    discount_factor=0.0,            # Q-learning gamma (0.0-1.0)
+    exploration_rate=1.0,           # initial epsilon for ε-greedy (0.0-1.0)
+    decay_rate=0.995,               # multiplicative decay per episode (0.0-1.0)
+    min_exploration=0.01,           # minimum epsilon threshold
+    strategy=None,                  # custom BaseLearningStrategy (default: Q-learning)
+    state_encoder=None,             # function to normalize states (default: no-op)
+)
+```
+
+| Method | Description |
+|---|---|
+| `select_action(state)` | Pick a prompt for the given task context |
+| `update(state, action, reward)` | Learn from feedback (training mode only) |
+| `store_experience(state, action, reward)` | Buffer episode + update metrics + decay |
+| `run_episode(task, executor, reward_fn)` | Full loop: select → execute → score → learn |
+| `train_batch()` | Replay all buffered experiences |
+| `set_mode("training" \| "inference")` | Switch modes (inference sets ε=0) |
+| `save_policy(filepath)` / `load_policy(filepath)` | Persist/restore agent state |
+| `get_metrics()` | Returns episode count, rewards, exploration rate, selection counts |
+| `clear_buffer()` | Reset experience buffer |
+| `decay_exploration()` | Manually apply ε decay |
+
+### Supporting Classes
+
+| Class | File | Purpose |
+|---|---|---|
+| `ExperienceBuffer` | `experience_buffer.py` | Store/retrieve/save/load episodes |
+| `MetricsTracker` | `metrics.py` | Episode counts, rewards, selection distribution |
+| `QTable` | `q_table.py` | State-action value storage |
+| `QLearningStrategy` | `strategy.py` | Default Q-learning algorithm |
+| `BaseLearningStrategy` | `strategy.py` | ABC for custom algorithms |
+| `ActionExecutor` | `interfaces.py` | ABC for LLM prompt execution |
+| `RewardFunction` | `interfaces.py` | ABC for response scoring |
+| `Environment` | `environment.py` | Manual HITL reward collection |
+
+### Configuration Parameters
+
+| Parameter | Default | Range | Description |
+|---|---|---|---|
+| `learning_rate` | 0.1 | [0.0, 1.0] | How fast Q-values update. Higher = faster but noisier |
+| `discount_factor` | 0.0 | [0.0, 1.0] | Weight of future rewards. 0.0 for immediate-reward tasks |
+| `exploration_rate` | 1.0 | [0.0, 1.0] | Initial probability of random exploration |
+| `decay_rate` | 0.995 | [0.0, 1.0] | ε multiplier per episode. Lower = faster convergence |
+| `min_exploration` | 0.01 | [0.0, 1.0] | Floor for exploration rate |
 
 ## Integration — What You Need to Implement
 
@@ -149,6 +204,11 @@ executor = YourLLMExecutor()
 judge = YourJudgeReward()
 agent = RLAgent(prompts=["prompt A", "prompt B", "prompt C"])
 
+# Option 1: run_episode does everything in one call
+for task in tasks:
+    result = agent.run_episode(task, executor, judge)
+
+# Option 2: manual control
 for task in tasks:
     prompt = agent.select_action(task)
     result = executor.execute(prompt, task)
