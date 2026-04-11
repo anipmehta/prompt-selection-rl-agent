@@ -12,6 +12,7 @@ TEST_STATE = "summarize this article"
 TEST_ACTION = SAMPLE_PROMPTS[0]
 POSITIVE_REWARD = 0.8
 POLICY_FILE = "test_agent_policy.json"
+INFERENCE_MODE = RLAgent.MODE_INFERENCE
 
 
 @pytest.fixture(autouse=True)
@@ -38,12 +39,12 @@ class TestAgentPersistenceWiring:
     def test_save_load_restores_mode(self) -> None:
         """Round-trip should restore inference mode."""
         agent = RLAgent(prompts=SAMPLE_PROMPTS)
-        agent.set_mode("inference")
+        agent.set_mode(INFERENCE_MODE)
         agent.save_policy(POLICY_FILE)
 
         new_agent = RLAgent(prompts=SAMPLE_PROMPTS)
         new_agent.load_policy(POLICY_FILE)
-        assert new_agent.mode == "inference"
+        assert new_agent.mode == INFERENCE_MODE
 
     def test_save_load_restores_metrics(self) -> None:
         """Round-trip should restore metrics."""
