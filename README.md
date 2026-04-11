@@ -181,6 +181,8 @@ agent = RLAgent(
 
 The agent is fully functional but ships with abstract interfaces for external system integration. To connect it to your annotation platform, implement these two classes:
 
+**Note:** If you use a `state_encoder` during training, you must pass the same encoder when creating the agent that loads the policy. Encoders are functions and cannot be serialized to JSON.
+
 ```python
 from src.interfaces import ActionExecutor, RewardFunction
 
